@@ -46,16 +46,25 @@ class Drone(object):
         ############################
         #   FIGURE FOR ANIMATION   #
         ############################
-        self.fig, self.axes = plt.subplots(3, 1, figsize=(8, 10), sharex="all")
+        self.fig, self.axes = plt.subplots(3, 2, figsize=(12, 8), sharex="all")
+        self.axes = self.axes.flatten()
         self.fig.canvas.mpl_connect('key_press_event', self.main)
         self.x_ref, self.y_ref, self.z_ref = [], [], []
         self.x_pos, self.y_pos, self.z_pos = [], [], []
+        self.ref_phi, self.ref_theta, self.ref_psi = [], [], []
+        self.phi, self.theta, self.psi = [], [], []
         self.line_xref, = self.axes[0].plot([], [], 'b-', label='ref x')
         self.line_xpos, = self.axes[0].plot([], [], 'r--', label='x')
         self.line_yref, = self.axes[1].plot([], [], 'b-', label='ref y')
         self.line_ypos, = self.axes[1].plot([], [], 'r--', label='y')
         self.line_zref, = self.axes[2].plot([], [], 'b-', label='ref z')
         self.line_zpos, = self.axes[2].plot([], [], 'r--', label='z')
+        self.line_refphi, = self.axes[3].plot([], [], 'b-', label='ref phi')
+        self.line_phi, = self.axes[3].plot([], [], 'r--', label='phi')
+        self.line_reftheta, = self.axes[4].plot([], [], 'b-', label='ref theta')
+        self.line_theta, = self.axes[4].plot([], [], 'r--', label='theta')
+        self.line_refpsi, = self.axes[5].plot([], [], 'b-', label='ref psi')
+        self.line_psi, = self.axes[5].plot([], [], 'r--', label='psi')
         [self.axes[i].legend() for i in range(len(self.axes))]  # activating the legends
         [self.axes[i].grid(True) for i in range(len(self.axes))]  # activating the legends
 
@@ -210,31 +219,17 @@ class Drone(object):
             self.x_ref.append(x)
             self.y_ref.append(y)
             self.z_ref.append(z)
+            self.ref_phi.append(position_pid_model.outputs["ref_phi"])
+            self.ref_theta.append(position_pid_model.outputs["ref_theta"])
+            self.ref_psi.append(waypoint_generator_model.outputs["ref_psi"][0])
             self.x_pos.append(self.state_array[-1][9])
             self.y_pos.append(self.state_array[-1][10])
             self.z_pos.append(self.state_array[-1][11])
+            self.phi.append(self.state_array[-1][6])
+            self.theta.append(self.state_array[-1][7])
+            self.psi.append(self.state_array[-1][8])
 
-            # animating the x position of drone
-            self.line_xref.set_data(self.time_array, self.x_ref)
-            self.line_xpos.set_data(self.time_array, self.x_pos)
-            self.axes[0].relim()
-            self.axes[0].autoscale_view()
-
-            # animating the y position of drone
-            self.line_yref.set_data(self.time_array, self.y_ref)
-            self.line_ypos.set_data(self.time_array, self.y_pos)
-            self.axes[1].relim()
-            self.axes[1].autoscale_view()
-
-            # animating the z position of drone
-            self.line_zref.set_data(self.time_array, self.z_ref)
-            self.line_zpos.set_data(self.time_array, self.z_pos)
-            self.axes[2].relim()
-            self.axes[2].autoscale_view()
-
-            plt.draw()
-            plt.grid()
-            plt.pause(0.01)
+            self.add_plot_point()
 
     def move_a_step_in(self, dir=None):
         """
@@ -265,10 +260,10 @@ class Drone(object):
                     M=0.0,
                     N=0.0,
                 )
-            elif dir == "x":
-                raise NotADirectoryError("x manual control not yet implemented")
             elif dir == "y":
-                raise NotADirectoryError("y manual control not yet implemented")
+                raise NotImplementedError("hfhuw")
+            elif dir == "x":
+                raise NotImplementedError("jbvhj")
 
             rk4_integration_model.update_inputs(t0=time,
                                                 state_0=rk4_integration_model.outputs["state"],
@@ -281,10 +276,19 @@ class Drone(object):
         self.x_ref.append(self.state_array[-1][9])
         self.y_ref.append(self.state_array[-1][10])
         self.z_ref.append(self.state_array[-1][11])
+        self.ref_phi.append(self.state_array[-1][6])
+        self.ref_theta.append(self.state_array[-1][7])
+        self.ref_psi.append(self.state_array[-1][8])
         self.x_pos.append(self.state_array[-1][9])
         self.y_pos.append(self.state_array[-1][10])
         self.z_pos.append(self.state_array[-1][11])
+        self.phi.append(self.state_array[-1][6])
+        self.theta.append(self.state_array[-1][7])
+        self.psi.append(self.state_array[-1][8])
 
+        self.add_plot_point()
+
+    def add_plot_point(self):
         # animating the x position of drone
         self.line_xref.set_data(self.time_array, self.x_ref)
         self.line_xpos.set_data(self.time_array, self.x_pos)
@@ -302,6 +306,24 @@ class Drone(object):
         self.line_zpos.set_data(self.time_array, self.z_pos)
         self.axes[2].relim()
         self.axes[2].autoscale_view()
+
+        # animating the phi of drone
+        self.line_refphi.set_data(self.time_array, self.ref_phi)
+        self.line_phi.set_data(self.time_array, self.phi)
+        self.axes[3].relim()
+        self.axes[3].autoscale_view()
+
+        # animating the phi of drone
+        self.line_reftheta.set_data(self.time_array, self.ref_theta)
+        self.line_theta.set_data(self.time_array, self.theta)
+        self.axes[4].relim()
+        self.axes[4].autoscale_view()
+
+        # animating the phi of drone
+        self.line_refpsi.set_data(self.time_array, self.ref_psi)
+        self.line_psi.set_data(self.time_array, self.psi)
+        self.axes[5].relim()
+        self.axes[5].autoscale_view()
 
         plt.draw()
         plt.grid()
@@ -334,6 +356,12 @@ class Drone(object):
 
         elif event.key.lower() == "up":
             self.move_a_step_in(dir="z")
+
+        elif event.key.lower() == "w":
+            self.move_a_step_in(dir="y")
+
+        elif event.key.lower() == "d":
+            self.move_a_step_in(dir="x")
 
 
 if __name__ == "__main__":
