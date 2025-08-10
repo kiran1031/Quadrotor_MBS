@@ -172,6 +172,7 @@ class Drone(object):
                 self.state_array.append(input_model.outputs["state_0"])
                 rk4_integration_model.process()
             else:
+                # this is to reinitialize after calling manual control as it overrides the inputs
                 attitude_pid_model.update_inputs(
                     ref_phi=position_pid_model["ref_phi"],
                     ref_theta=position_pid_model["ref_theta"],
@@ -185,11 +186,13 @@ class Drone(object):
                 )
                 if t_idx % self.freq_ratio == 0:
                     waypoint_generator_model.update_inputs(
+                        option="step",
                         time=np.array([time]),
                         kwargs={"x": x, "y": y, "z": z}
                     )
                     waypoint_generator_model.process()
                     position_pid_model.update_inputs(
+                        Kp_pos=input_model["Kp_pos"],
                         ref_pos=waypoint_generator_model.outputs["ref_pos"][0, :],
                         ref_vel=waypoint_generator_model.outputs["ref_vel"][0, :],
                         ref_acc=waypoint_generator_model.outputs["ref_acc"][0, :],
@@ -231,18 +234,20 @@ class Drone(object):
 
             self.add_plot_point()
 
-    def move_a_step_in(self, dir=None):
+    def move_a_step_in(self, dir=None, sign=1):
         """
         Method to manually control the drone
 
         Args:
-            dir: x, y or z as a str to move along
+            dir: x, y or z as a str to move along with constant velocity
+            sign: to move either in positive or negative direction
 
         Returns:
 
         """
         t_idx, time = next(self.time_iterable)
         self.time_array.append(time)
+        initial_z = input_model.outputs["state_0"][11]  # need to maintain this z when moving along x and y
 
         if t_idx == 0:
             self.state_array.append(input_model.outputs["state_0"])
@@ -260,14 +265,66 @@ class Drone(object):
                     M=0.0,
                     N=0.0,
                 )
-            elif dir == "y":
-                raise NotImplementedError("hfhuw")
+                rk4_integration_model.update_inputs(t0=time,
+                                                    state_0=rk4_integration_model.outputs["state"],
+                                                    model=[attitude_pid_model, quad_plant_model])
             elif dir == "x":
-                raise NotImplementedError("jbvhj")
+                waypoint_generator_model.update_inputs(
+                    time=np.array([time]),
+                    option="constant_velocity",
+                    kwargs={"ue": sign * 1.0, "ve": 0.0, "we": 0.0}
+                )
+                waypoint_generator_model.process()
+                position_pid_model.update_inputs(
+                    Kp_pos=np.array([0 ,0, 30.0]),
+                    ref_pos=np.array([0.0, 0.0, initial_z]),
+                    ref_vel=waypoint_generator_model.outputs["ref_vel"][0, :],
+                    ref_acc=waypoint_generator_model.outputs["ref_acc"][0, :],
+                    ref_psi=waypoint_generator_model.outputs["ref_psi"][0],
+                )
+                attitude_pid_model.update_inputs(
+                    ref_phi=position_pid_model["ref_phi"],
+                    ref_theta=position_pid_model["ref_theta"],
+                    ref_psi=waypoint_generator_model.outputs["ref_psi"][0],
+                )
+                quad_plant_model.update_inputs(
+                    thrust=position_pid_model["thrust"],
+                    L=attitude_pid_model["L"],
+                    M=attitude_pid_model["M"],
+                    N=attitude_pid_model["N"],
+                )
+                rk4_integration_model.update_inputs(t0=time,
+                                                    state_0=rk4_integration_model.outputs["state"],
+                                                    model=[position_pid_model, attitude_pid_model, quad_plant_model])
+            elif dir == "y":
+                waypoint_generator_model.update_inputs(
+                    time=np.array([time]),
+                    option="constant_velocity",
+                    kwargs={"ue": 0.0, "ve": sign * 1.0, "we": 0.0}
+                )
+                waypoint_generator_model.process()
+                position_pid_model.update_inputs(
+                    Kp_pos=np.array([0, 0, 30.0]),
+                    ref_pos=np.array([0.0, 0.0, initial_z]),
+                    ref_vel=waypoint_generator_model.outputs["ref_vel"][0, :],
+                    ref_acc=waypoint_generator_model.outputs["ref_acc"][0, :],
+                    ref_psi=waypoint_generator_model.outputs["ref_psi"][0],
+                )
+                attitude_pid_model.update_inputs(
+                    ref_phi=position_pid_model["ref_phi"],
+                    ref_theta=position_pid_model["ref_theta"],
+                    ref_psi=waypoint_generator_model.outputs["ref_psi"][0],
+                )
+                quad_plant_model.update_inputs(
+                    thrust=position_pid_model["thrust"],
+                    L=attitude_pid_model["L"],
+                    M=attitude_pid_model["M"],
+                    N=attitude_pid_model["N"],
+                )
+                rk4_integration_model.update_inputs(t0=time,
+                                                    state_0=rk4_integration_model.outputs["state"],
+                                                    model=[position_pid_model, attitude_pid_model, quad_plant_model])
 
-            rk4_integration_model.update_inputs(t0=time,
-                                                state_0=rk4_integration_model.outputs["state"],
-                                                model=[attitude_pid_model, quad_plant_model])
             rk4_integration_model.process()
 
         self.state_array.append(rk4_integration_model.outputs["state"])
@@ -357,11 +414,20 @@ class Drone(object):
         elif event.key.lower() == "up":
             self.move_a_step_in(dir="z")
 
+        elif event.key.lower() == "down":
+            self.move_a_step_in(dir="z", sign=-1)
+
         elif event.key.lower() == "w":
             self.move_a_step_in(dir="y")
 
+        elif event.key.lower() == "s":
+            self.move_a_step_in(dir="y", sign=-1)
+
         elif event.key.lower() == "d":
             self.move_a_step_in(dir="x")
+
+        elif event.key.lower() == "a":
+            self.move_a_step_in(dir="x", sign=-1)
 
 
 if __name__ == "__main__":

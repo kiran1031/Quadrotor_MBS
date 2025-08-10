@@ -54,6 +54,24 @@ class WaypointGeneratorModel(ModelCreator):
 
             self.outputs['ref_psi'] = array([0] * len(self.inputs["time"]))
 
+        elif self.inputs["option"] == "constant_velocity":
+            self.outputs["ref_pos"] = array([
+                array([0] * len(self.inputs["time"])),
+                array([0] * len(self.inputs["time"])),
+                array([0] * len(self.inputs["time"]))]).transpose()
+
+            self.outputs["ref_vel"] = array([
+                array([self.inputs["kwargs"]["ue"]] * len(self.inputs["time"])),
+                array([self.inputs["kwargs"]["ve"]] * len(self.inputs["time"])),
+                array([self.inputs["kwargs"]["we"]] * len(self.inputs["time"]))]).transpose()
+
+            self.outputs["ref_acc"] = array([
+                array([0] * len(self.inputs["time"])),
+                array([0] * len(self.inputs["time"])),
+                array([0] * len(self.inputs["time"]))]).transpose()
+
+            self.outputs['ref_psi'] = array([0] * len(self.inputs["time"]))
+
         elif self.inputs["option"] == "straight_line":
             self.outputs["ref_pos"] = array([
                 self.initial_point[0] + self.inputs["time"] * self.direction_vector[0],

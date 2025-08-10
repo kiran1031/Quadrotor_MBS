@@ -11,6 +11,17 @@ def get_rotation_matrix_zyx(phi=0, theta=0, psi=0):
 
 
 def get_rotation_matrix_zxy(phi=0, theta=0, psi=0):
+    """
+    Notice rotation sequence of Z, X and Y
+    Hence this transformation is from body to inertial frame
+    Args:
+        phi:
+        theta:
+        psi:
+
+    Returns:
+
+    """
     R_x=np.array([[1, 0, 0],[0, np.cos(phi), -np.sin(phi)],[0, np.sin(phi), np.cos(phi)]])
     R_y=np.array([[np.cos(theta),0,np.sin(theta)],[0,1,0],[-np.sin(theta),0,np.cos(theta)]])
     R_z=np.array([[np.cos(psi),-np.sin(psi),0],[np.sin(psi),np.cos(psi),0],[0,0,1]])

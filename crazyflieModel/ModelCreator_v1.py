@@ -99,7 +99,7 @@ class ModelCreator(ABC):
             **input_connections: Keyword arguments where the key is an input
                 name and the value is an OutputRef or a direct Python value.
         """
-        print(f"Connecting inputs for '{self.name}'...")
+        # print(f"Connecting inputs for '{self.name}'...")
         self._connections = {}
 
         for dest_input_name, source in input_connections.items():
@@ -109,18 +109,18 @@ class ModelCreator(ABC):
 
             if isinstance(source, OutputRef):
                 self._connections[dest_input_name] = source
-                print(f"  - Mapped input '{dest_input_name}' <- "
-                      f"'{source.model.name}' output path '{source.output_path}'")
+                # print(f"  - Mapped input '{dest_input_name}' <- "
+                #       f"'{source.model.name}' output path '{source.output_path}'")
             else:
                 self._connections[dest_input_name] = source
-                print(f"  - Set direct input '{dest_input_name}' = {source} ({type(source).__name__})")
+                # print(f"  - Set direct input '{dest_input_name}' = {source} ({type(source).__name__})")
 
         missing_inputs = [key for key in self.input_schema if key not in self._connections]
         if missing_inputs:
             raise ValueError(
                 f"Connection failed for '{self.name}'. Missing required input connections: {missing_inputs}."
             )
-        print(f"-> Successfully connected '{self.name}'.")
+        # print(f"-> Successfully connected '{self.name}'.")
 
     ### NEW ###
     def reset(self) -> None:
@@ -153,10 +153,12 @@ class ModelCreator(ABC):
         method is called.
 
         Args:
+            log: to log the operation
             **new_inputs: Keyword arguments where the key is the name
                 of an input to update, and the value is the new source.
         """
-        print(f"\nUpdating inputs for '{self.name}'...")
+
+        # print(f"\nUpdating inputs for '{self.name}'...")
 
         # If we change inputs, the model's current processed state is now invalid.
         # This reset is critical for ensuring correctness on the next run.
@@ -174,13 +176,13 @@ class ModelCreator(ABC):
             self._connections[input_name] = new_source
 
             # 3. Provide clear feedback to the user about what changed.
-            if isinstance(new_source, OutputRef):
-                print(f"  - Updated input '{input_name}' <- "
-                      f"'{new_source.model.name}' output path '{new_source.output_path}'")
-            else:
-                print(f"  - Updated direct input '{input_name}' = {new_source} ({type(new_source).__name__})")
+            # if isinstance(new_source, OutputRef):
+            #     print(f"  - Updated input '{input_name}' <- "
+            #           f"'{new_source.model.name}' output path '{new_source.output_path}'")
+            # else:
+            #     print(f"  - Updated direct input '{input_name}' = {new_source} ({type(new_source).__name__})")
 
-        print(f"-> Update complete for '{self.name}'. Model must be re-processed.")
+        # print(f"-> Update complete for '{self.name}'. Model must be re-processed.")
 
     def _gather_inputs(self) -> Dict[str, Any]:
         """Gathers inputs from connections or uses directly assigned values."""
@@ -220,7 +222,7 @@ class ModelCreator(ABC):
         for model in dependency_models:
             model.process()
 
-        print(f"--- Running process: '{self.name}' ---")
+        # print(f"--- Running process: '{self.name}' ---")
 
         self.start_timer()
         self.inputs = self._gather_inputs()
